@@ -22,12 +22,18 @@
                     link: function (scope, element, attrs) {
                         var template;
                         var processedAttr = pluginHelper.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
-                        var overRiddenDefaults = {};
+                        var overRiddenDefaults = {
+                            'show-button-bar': false,
+                            'show-meridian': false,
+                            'date-format': 'dd/MM/yyyy'
+                        };
                         overRiddenDefaults = Object.assign({}, overRiddenDefaults, processedAttr.directiveOptions);
                         var overRiddenDateDefaults = {
                             showWeeks: false
                         };
-                        var jsonDateOptions = {};
+                        var jsonDateOptions = {
+                            'showWeeks': false
+                        };
                         if (processedAttr.directiveOptions['date-options']) {
                             jsonDateOptions = JSON.parse(processedAttr.directiveOptions['date-options'].replace(/'/g, '"'));
                         }
@@ -42,7 +48,7 @@
                             }
 
                             return formMarkupHelper.generateSimpleInput(
-                                buildingBlocks.common + str + ' uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="popup.opened" ng-click="open()" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
+                                buildingBlocks.common + str + ' datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="popup.opened" ng-click="open()" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
                                 processedAttr.info,
                                 processedAttr.options
                             );
