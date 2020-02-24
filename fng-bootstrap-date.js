@@ -48,7 +48,7 @@
                             }
 
                             return formMarkupHelper.generateSimpleInput(
-                                buildingBlocks.common + str + ' datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="popup.opened" ng-click="open()" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
+                                buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="popup.opened" ng-click="open()" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
                                 processedAttr.info,
                                 processedAttr.options
                             );
@@ -73,4 +73,42 @@
                 };
             }]
         )
+        .directive('validdate', [function() {
+            return {
+                require: 'ngModel',
+                link: function(scope, elm, attrs, ctrl) {
+                    let minDate;
+                    let maxDate;
+                    if (scope.dateOptions.minDate) {
+                        minDate = new Date(scope.dateOptions.minDate).valueOf();
+                    }
+                    if (scope.dateOptions.maxDate) {
+                        maxDate = new Date(scope.dateOptions.maxDate).valueOf();
+                    }
+                    if (minDate || maxDate) {
+                        if (attrs.format !== 'dd/MM/yyyy') {
+                            throw new Error('Unsupported date format in validdate: ' + attrs.format)
+                        }
+                    }
+
+                    ctrl.$validators.validdate = function(modelValue, viewValue) {
+                        if (ctrl.$isEmpty(modelValue)) {
+                            // consider empty models to be invalid
+                            return false;
+                        }
+                        let retVal = true;
+                        if (minDate || maxDate) {
+                            let dateVal = new Date(parseInt(viewValue.slice(6,10),10), parseInt(viewValue.slice(3,5),10)-1,parseInt(viewValue.slice(0,2),10)).valueOf();
+                            if (minDate && dateVal < minDate) {
+                                retVal = false;
+                            }
+                            if (maxDate && dateVal > maxDate) {
+                                retVal = false;
+                            }
+                        }
+                        return retVal;
+                    };
+                }
+            }
+        }])
 })();
