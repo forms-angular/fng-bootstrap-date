@@ -20,6 +20,16 @@
                     priority: 1,
                     controller: 'FngUIBootstrapDateCtrl',
                     link: function (scope, element, attrs) {
+                        function afterTimeout() {
+                            $timeout(function() {
+                                if (element[0].parentElement) {
+                                    element.replaceWith(html);
+                                } else {
+                                    afterTimeout();
+                                }
+                            });
+                        }
+
                         var template;
                         var processedAttr = pluginHelper.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
                         var overRiddenDefaults = {
@@ -40,7 +50,7 @@
                         scope.dateOptions = Object.assign({}, overRiddenDateDefaults, jsonDateOptions);
 
                         template = pluginHelper.buildInputMarkup(scope, attrs.model, processedAttr.info, processedAttr.options, false, false, function (buildingBlocks) {
-                            let str = '';
+                            var str = '';
                             for (var opt in overRiddenDefaults) {
                                 if (opt !== 'date-options') {
                                     str += ' ' + opt + '="' + overRiddenDefaults[opt] + '"';
@@ -53,20 +63,10 @@
                                 processedAttr.options
                             );
                         });
-                        const html = $compile(template)(scope);
+                        var html = $compile(template)(scope);
                         if (element[0].parentElement) {
                             element.replaceWith(html);
                         } else {
-
-                            function afterTimeout() {
-                                $timeout(() => {
-                                    if (element[0].parentElement) {
-                                        element.replaceWith(html);
-                                    } else {
-                                        afterTimeout();
-                                    }
-                                });
-                            }
                             afterTimeout();
                         }
                     }
@@ -77,8 +77,8 @@
             return {
                 require: 'ngModel',
                 link: function(scope, elm, attrs, ctrl) {
-                    let minDate;
-                    let maxDate;
+                    var minDate;
+                    var maxDate;
                     if (scope.dateOptions.minDate) {
                         minDate = new Date(scope.dateOptions.minDate).valueOf();
                     }
@@ -96,9 +96,9 @@
                             // consider empty models to be invalid
                             return false;
                         }
-                        let retVal = true;
+                        var retVal = true;
                         if (minDate || maxDate) {
-                            let dateVal = new Date(parseInt(viewValue.slice(6,10),10), parseInt(viewValue.slice(3,5),10)-1,parseInt(viewValue.slice(0,2),10)).valueOf();
+                            var dateVal = new Date(parseInt(viewValue.slice(6,10),10), parseInt(viewValue.slice(3,5),10)-1,parseInt(viewValue.slice(0,2),10)).valueOf();
                             if (minDate && dateVal < minDate) {
                                 retVal = false;
                             }
