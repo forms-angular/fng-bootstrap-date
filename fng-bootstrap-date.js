@@ -56,7 +56,12 @@
                                     str += ' ' + opt + '="' + overRiddenDefaults[opt] + '"';
                                 }
                             }
-
+                            if (processedAttr.info.title) {
+                                str += ' title="' + processedAttr.info.title + '"';
+                            }
+                            if (processedAttr.info.arialabel) {
+                                str += ' aria-label="' + processedAttr.info.arialabel + '"';
+                            }
                             return formMarkupHelper.generateSimpleInput(
                                 buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="popup.opened" ng-click="open()" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
                                 processedAttr.info,
