@@ -49,7 +49,8 @@
                         }
                         scope.dateOptions = Object.assign({}, overRiddenDateDefaults, jsonDateOptions);
 
-                        template = pluginHelper.buildInputMarkup(scope, attrs.model, processedAttr.info, processedAttr.options, false, false, function (buildingBlocks) {
+                        const isArray = processedAttr.info.array;
+                        template = pluginHelper.buildInputMarkup(scope, attrs.model, processedAttr.info, processedAttr.options, isArray, isArray, function (buildingBlocks) {
                             var str = '';
                             for (var opt in overRiddenDefaults) {
                                 if (opt !== 'date-options') {
@@ -62,8 +63,20 @@
                             if (processedAttr.info.arialabel) {
                                 str += ' aria-label="' + processedAttr.info.arialabel + '"';
                             }
+                            const prefix = "uibDatePopup";
+                            const random = Math.floor(Math.random() * 10000);
+                            scope[prefix + random] = {
+                                opened: {}
+                            };                    
+                            scope["open" + random] = function ($index) {
+                                const all = Object.keys(scope).filter((k) => k.startsWith(prefix));
+                                for (const key of all) {
+                                    scope[key].opened = {};
+                                }
+                                scope[prefix + random].opened[$index || 0] = true;
+                            }                            
                             return formMarkupHelper.generateSimpleInput(
-                                buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="popup.opened" ng-click="open()" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
+                                buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="' + prefix + random + '.opened[$index || 0]" ng-click="open' + random + '($index)" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
                                 processedAttr.info,
                                 processedAttr.options
                             );
