@@ -47,7 +47,12 @@
                         if (processedAttr.directiveOptions['date-options']) {
                             jsonDateOptions = JSON.parse(processedAttr.directiveOptions['date-options'].replace(/'/g, '"'));
                         }
-                        scope.dateOptions = Object.assign({}, overRiddenDateDefaults, jsonDateOptions);
+                        scope.dateOptions = Object.assign(overRiddenDateDefaults, jsonDateOptions);
+                        ["minDate","maxDate"].forEach(v => {
+                            if (scope.dateOptions[v] && typeof scope.dateOptions[v] === "string") {
+                                scope.dateOptions[v] = new Date(scope.dateOptions[v]);
+                            }
+                        })
 
                         const isArray = processedAttr.info.array;
                         template = pluginHelper.buildInputMarkup(scope, attrs.model, processedAttr.info, processedAttr.options, isArray, isArray, function (buildingBlocks) {
@@ -67,14 +72,14 @@
                             const random = Math.floor(Math.random() * 10000);
                             scope[prefix + random] = {
                                 opened: {}
-                            };                    
+                            };
                             scope["open" + random] = function ($index) {
                                 const all = Object.keys(scope).filter((k) => k.startsWith(prefix));
                                 for (const key of all) {
                                     scope[key].opened = {};
                                 }
                                 scope[prefix + random].opened[$index || 0] = true;
-                            }                            
+                            }
                             return formMarkupHelper.generateSimpleInput(
                                 buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="' + prefix + random + '.opened[$index || 0]" ng-click="open' + random + '($index)" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
                                 processedAttr.info,
@@ -116,7 +121,7 @@
                         }
                         var retVal = true;
                         if (minDate || maxDate) {
-                            var dateVal = new Date(parseInt(viewValue.slice(6,10),10), parseInt(viewValue.slice(3,5),10)-1,parseInt(viewValue.slice(0,2),10)).valueOf();
+                            var dateVal = modelValue.valueOf();
                             if (minDate && dateVal < minDate) {
                                 retVal = false;
                             }
