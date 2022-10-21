@@ -79,9 +79,22 @@
                                     scope[key].opened = {};
                                 }
                                 scope[prefix + random].opened[$index || 0] = true;
+                            }                            
+                            let common = buildingBlocks.common + str + ' datepicker-options="dateOptions" ';
+                            common += formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, '');
+                            const dateFormat = processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy';
+                            common += `uib-datepicker-popup="${dateFormat}"`;
+                            const disabled = pluginHelper.handleReadOnlyDisabled(processedAttr.info.id, attrs);
+                            common += disabled;
+                            // if we already know that the INPUT is DISABLED (rather than this being deferred to an ng-disabled attribute
+                            // for binding later), then we can reduce the size of the markup by excluding irrelevant stuff
+                            if (disabled?.trim().toLowerCase() !== "disabled") {
+                                common += `is-open="${prefix}${random}.opened[$index || 0]" `;
+                                common += `ng-click="open${random}($index)" `;
+                                common += "validdate"
                             }
                             return formMarkupHelper.generateSimpleInput(
-                                buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="' + prefix + random + '.opened[$index || 0]" ng-click="open' + random + '($index)" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
+                                common,
                                 processedAttr.info,
                                 processedAttr.options
                             );
