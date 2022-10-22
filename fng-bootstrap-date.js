@@ -12,13 +12,14 @@
             $scope.popup.opened = true;
         }
     }])
-        .directive('fngUiBootstrapDatePicker', ['$compile', '$filter', '$timeout', 'pluginHelper', 'formMarkupHelper', 'cssFrameworkService',
-            function ($compile, $filter, $timeout, pluginHelper, formMarkupHelper) {
+        .directive('fngUiBootstrapDatePicker', ['$compile', '$timeout', 'pluginHelper', 'formMarkupHelper', 'cssFrameworkService',
+            function ($compile, $timeout, pluginHelper, formMarkupHelper) {
                 return {
                     restrict: 'E',
                     replace: true,
                     priority: 1,
                     controller: 'FngUIBootstrapDateCtrl',
+                    scope: true, // our own scope, but not isolated - prevents multiple instances on the same page from opening each other
                     link: function (scope, element, attrs) {
                         function afterTimeout() {
                             $timeout(function() {
@@ -32,13 +33,13 @@
 
                         var template;
                         var processedAttr = pluginHelper.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
-                        var overRiddenDefaults = {
+                        var overriddenDefaults = {
                             'show-button-bar': false,
                             'show-meridian': false,
                             'date-format': 'dd/MM/yyyy'
                         };
-                        overRiddenDefaults = Object.assign({}, overRiddenDefaults, processedAttr.directiveOptions);
-                        var overRiddenDateDefaults = {
+                        overriddenDefaults = Object.assign({}, overriddenDefaults, processedAttr.directiveOptions);
+                        var overriddenDateDefaults = {
                             showWeeks: false
                         };
                         var jsonDateOptions = {
@@ -47,7 +48,7 @@
                         if (processedAttr.directiveOptions['date-options']) {
                             jsonDateOptions = JSON.parse(processedAttr.directiveOptions['date-options'].replace(/'/g, '"'));
                         }
-                        scope.dateOptions = Object.assign(overRiddenDateDefaults, jsonDateOptions);
+                        scope.dateOptions = Object.assign(overriddenDateDefaults, jsonDateOptions);
                         ["minDate","maxDate"].forEach(v => {
                             if (scope.dateOptions[v] && typeof scope.dateOptions[v] === "string") {
                                 scope.dateOptions[v] = new Date(scope.dateOptions[v]);
@@ -56,45 +57,35 @@
 
                         const isArray = processedAttr.info.array;
                         template = pluginHelper.buildInputMarkup(scope, attrs.model, processedAttr.info, processedAttr.options, isArray, isArray, function (buildingBlocks) {
-                            var str = '';
-                            for (var opt in overRiddenDefaults) {
+                            var str = buildingBlocks.common.trim();
+                            for (var opt in overriddenDefaults) {
                                 if (opt !== 'date-options') {
-                                    str += ' ' + opt + '="' + overRiddenDefaults[opt] + '"';
+                                    str += ` ${opt}="${overriddenDefaults[opt]}"`;
                                 }
                             }
                             if (processedAttr.info.title) {
-                                str += ' title="' + processedAttr.info.title + '"';
+                                str += ` title="${processedAttr.info.title}"`;
                             }
                             if (processedAttr.info.arialabel) {
-                                str += ' aria-label="' + processedAttr.info.arialabel + '"';
+                                str += ` aria-label="${processedAttr.info.arialabel}"`;
                             }
-                            const prefix = "uibDatePopup";
-                            const random = Math.floor(Math.random() * 10000);
-                            scope[prefix + random] = {
-                                opened: {}
-                            };
-                            scope["open" + random] = function ($index) {
-                                const all = Object.keys(scope).filter((k) => k.startsWith(prefix));
-                                for (const key of all) {
-                                    scope[key].opened = {};
-                                }
-                                scope[prefix + random].opened[$index || 0] = true;
-                            }                            
-                            let common = buildingBlocks.common + str + ' datepicker-options="dateOptions" ';
-                            common += formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, '');
+                            if (processedAttr.info.required) {
+                                str += " required";
+                            }
+                            const markup = formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, '');
+                            const disabled = pluginHelper.handleReadOnlyDisabled(processedAttr.info.id, attrs) || " ";
                             const dateFormat = processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy';
-                            common += `uib-datepicker-popup="${dateFormat}"`;
-                            const disabled = pluginHelper.handleReadOnlyDisabled(processedAttr.info.id, attrs);
-                            common += disabled;
-                            // if we already know that the INPUT is DISABLED (rather than this being deferred to an ng-disabled attribute
-                            // for binding later), then we can reduce the size of the markup by excluding irrelevant stuff
+                            str += ` ${markup}${disabled}datepicker-options="dateOptions" uib-datepicker-popup="${dateFormat}"`;
+   
                             if (disabled?.trim().toLowerCase() !== "disabled") {
-                                common += `is-open="${prefix}${random}.opened[$index || 0]" `;
-                                common += `ng-click="open${random}($index)" `;
-                                common += "validdate"
+                                scope.popup = { opened: false };
+                                scope.open = function () {
+                                    scope.popup.opened = true;
+                                }
+                                str += ' is-open="popup.opened" ng-click="open()" validdate '; // don't remove the trailing space here
                             }
                             return formMarkupHelper.generateSimpleInput(
-                                common,
+                                str,
                                 processedAttr.info,
                                 processedAttr.options
                             );
@@ -129,8 +120,9 @@
 
                     ctrl.$validators.validdate = function(modelValue, viewValue) {
                         if (ctrl.$isEmpty(modelValue)) {
-                            // consider empty models to be invalid
-                            return false;
+                            // if empty should be considered invalid, the field should be set to required (which will
+                            // then be validated elsewhere)
+                            return true;
                         }
                         var retVal = true;
                         if (minDate || maxDate) {
