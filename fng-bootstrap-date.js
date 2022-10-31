@@ -12,13 +12,14 @@
             $scope.popup.opened = true;
         }
     }])
-        .directive('fngUiBootstrapDatePicker', ['$compile', '$filter', '$timeout', 'pluginHelper', 'formMarkupHelper', 'cssFrameworkService',
-            function ($compile, $filter, $timeout, pluginHelper, formMarkupHelper) {
+        .directive('fngUiBootstrapDatePicker', ['$compile', '$timeout', 'pluginHelper', 'formMarkupHelper', 'cssFrameworkService',
+            function ($compile, $timeout, pluginHelper, formMarkupHelper) {
                 return {
                     restrict: 'E',
                     replace: true,
                     priority: 1,
                     controller: 'FngUIBootstrapDateCtrl',
+                    scope: true, // our own scope, but not isolated - prevents multiple instances on the same page from opening each other
                     link: function (scope, element, attrs) {
                         function afterTimeout() {
                             $timeout(function() {
@@ -31,61 +32,73 @@
                         }
 
                         var template;
-                        var processedAttr = pluginHelper.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
-                        var overRiddenDefaults = {
+                        var processedAttrs = pluginHelper.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
+                        var overriddenDefaults = {
                             'show-button-bar': false,
                             'show-meridian': false,
                             'date-format': 'dd/MM/yyyy'
                         };
-                        overRiddenDefaults = Object.assign({}, overRiddenDefaults, processedAttr.directiveOptions);
-                        var overRiddenDateDefaults = {
+                        overriddenDefaults = Object.assign({}, overriddenDefaults, processedAttrs.directiveOptions);
+                        var overriddenDateDefaults = {
                             showWeeks: false
                         };
                         var jsonDateOptions = {
                             'showWeeks': false
                         };
-                        if (processedAttr.directiveOptions['date-options']) {
-                            jsonDateOptions = JSON.parse(processedAttr.directiveOptions['date-options'].replace(/'/g, '"'));
+                        if (processedAttrs.directiveOptions['date-options']) {
+                            jsonDateOptions = JSON.parse(processedAttrs.directiveOptions['date-options'].replace(/'/g, '"'));
                         }
-                        scope.dateOptions = Object.assign(overRiddenDateDefaults, jsonDateOptions);
+                        scope.dateOptions = Object.assign(overriddenDateDefaults, jsonDateOptions);
                         ["minDate","maxDate"].forEach(v => {
                             if (scope.dateOptions[v] && typeof scope.dateOptions[v] === "string") {
                                 scope.dateOptions[v] = new Date(scope.dateOptions[v]);
                             }
                         })
 
-                        const isArray = processedAttr.info.array;
-                        template = pluginHelper.buildInputMarkup(scope, attrs.model, processedAttr.info, processedAttr.options, isArray, isArray, function (buildingBlocks) {
-                            var str = '';
-                            for (var opt in overRiddenDefaults) {
-                                if (opt !== 'date-options') {
-                                    str += ' ' + opt + '="' + overRiddenDefaults[opt] + '"';
+                        const isArray = processedAttrs.info.array;
+                        template = pluginHelper.buildInputMarkup(
+                            scope,
+                            attrs,
+                            {
+                                processedAttrs,
+                                addButtons: isArray,
+                                needsX: isArray,
+                            },
+                            function (buildingBlocks) {
+                                var str = buildingBlocks.common.trim();
+                                for (var opt in overriddenDefaults) {
+                                    if (opt !== 'date-options') {
+                                        str += ` ${opt}="${overriddenDefaults[opt]}"`;
+                                    }
                                 }
-                            }
-                            if (processedAttr.info.title) {
-                                str += ' title="' + processedAttr.info.title + '"';
-                            }
-                            if (processedAttr.info.arialabel) {
-                                str += ' aria-label="' + processedAttr.info.arialabel + '"';
-                            }
-                            const prefix = "uibDatePopup";
-                            const random = Math.floor(Math.random() * 10000);
-                            scope[prefix + random] = {
-                                opened: {}
-                            };
-                            scope["open" + random] = function ($index) {
-                                const all = Object.keys(scope).filter((k) => k.startsWith(prefix));
-                                for (const key of all) {
-                                    scope[key].opened = {};
+                                if (processedAttrs.info.title) {
+                                    str += ` title="${processedAttrs.info.title}"`;
                                 }
-                                scope[prefix + random].opened[$index || 0] = true;
+                                if (processedAttrs.info.arialabel) {
+                                    str += ` aria-label="${processedAttrs.info.arialabel}"`;
+                                }
+                                if (processedAttrs.info.required) {
+                                    str += " required";
+                                }
+                                const markup = formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttrs.info, '');
+                                const disabled = pluginHelper.genDisabledStr(scope, processedAttrs, "");
+                                const dateFormat = processedAttrs.directiveOptions.format || processedAttrs.directiveOptions['date-format'] || 'dd/MM/yy';
+                                str += ` ${markup}${disabled}datepicker-options="dateOptions" uib-datepicker-popup="${dateFormat}"`;
+    
+                                if (disabled?.trim().toLowerCase() !== "disabled") {
+                                    scope.popup = { opened: false };
+                                    scope.open = function () {
+                                        scope.popup.opened = true;
+                                    }
+                                    str += ' is-open="popup.opened" ng-click="open()" validdate '; // don't remove the trailing space here
+                                }
+                                return formMarkupHelper.generateSimpleInput(
+                                    str,
+                                    processedAttrs.info,
+                                    processedAttrs.options
+                                );
                             }
-                            return formMarkupHelper.generateSimpleInput(
-                                buildingBlocks.common + str + ' validdate datepicker-options="dateOptions" uib-datepicker-popup="' + (processedAttr.directiveOptions.format || processedAttr.directiveOptions['date-format'] || 'dd/MM/yy') + '" is-open="' + prefix + random + '.opened[$index || 0]" ng-click="open' + random + '($index)" ' + formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttr.info, ''),
-                                processedAttr.info,
-                                processedAttr.options
-                            );
-                        });
+                        );
                         var html = $compile(template)(scope);
                         if (element[0].parentElement) {
                             element.replaceWith(html);
@@ -116,8 +129,9 @@
 
                     ctrl.$validators.validdate = function(modelValue, viewValue) {
                         if (ctrl.$isEmpty(modelValue)) {
-                            // consider empty models to be invalid
-                            return false;
+                            // if empty should be considered invalid, the field should be set to required (which will
+                            // then be validated elsewhere)
+                            return true;
                         }
                         var retVal = true;
                         if (minDate || maxDate) {
