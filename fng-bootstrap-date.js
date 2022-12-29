@@ -85,7 +85,7 @@
                                 const dateFormat = processedAttrs.directiveOptions.format || processedAttrs.directiveOptions['date-format'] || 'dd/MM/yy';
                                 str += ` ${markup}${disabled}datepicker-options="dateOptions" uib-datepicker-popup="${dateFormat}"`;
     
-                                if (disabled?.trim().toLowerCase() !== "disabled") {
+                                if (disabled && disabled.trim().toLowerCase() !== "disabled") {
                                     scope.popup = { opened: false };
                                     scope.open = function () {
                                         scope.popup.opened = true;
