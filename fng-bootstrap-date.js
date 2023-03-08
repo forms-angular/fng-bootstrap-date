@@ -131,8 +131,9 @@
                         maxDate = new Date(scope.dateOptions.maxDate).valueOf();
                     }
                     if (minDate || maxDate) {
-                        if (attrs.format !== 'dd/MM/yyyy') {
-                            throw new Error('Unsupported date format in validdate: ' + attrs.format)
+                        let dateFormat = attrs.format || attrs.dateFormat;
+                        if (dateFormat !== 'dd/MM/yyyy') {
+                            throw new Error('Unsupported date format in validdate: ' + dateFormat)
                         }
                     }
 
