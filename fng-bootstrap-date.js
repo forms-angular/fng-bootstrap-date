@@ -12,8 +12,8 @@
             $scope.popup.opened = true;
         }
     }])
-        .directive('fngUiBootstrapDatePicker', ['$compile', '$timeout', 'pluginHelper', 'formMarkupHelper', 'cssFrameworkService',
-            function ($compile, $timeout, pluginHelper, formMarkupHelper) {
+        .directive('fngUiBootstrapDatePicker', ['$compile', '$timeout', 'pluginHelper', 'formMarkupHelper', 'recordHandler', 'cssFrameworkService',
+            function ($compile, $timeout, pluginHelper, formMarkupHelper, recordHandler) {
                 return {
                     restrict: 'E',
                     replace: true,
@@ -51,7 +51,16 @@
                         scope.dateOptions = Object.assign(overriddenDateDefaults, jsonDateOptions);
                         ["minDate","maxDate"].forEach(v => {
                             if (scope.dateOptions[v] && typeof scope.dateOptions[v] === "string") {
-                                scope.dateOptions[v] = new Date(scope.dateOptions[v]);
+                                // allow minDate and maxDate to be derived from another (assumed to be date-typed) field, but with
+                                // the limitation that the value of that field must be available now and must not change
+                                // (i.e., this is effectively a one-time binding)
+                                // one possible use case would be to use the value of a hidden "when created" field as a minimum
+                                // or maximum value for another (not hidden) date field
+                                if (scope.dateOptions[v].startsWith("record.") || scope.dateOptions[v].startsWith("subDoc.")) {
+                                    scope.dateOptions[v] = recordHandler.getData(scope, scope.dateOptions[v]);
+                                } else {
+                                    scope.dateOptions[v] = new Date(scope.dateOptions[v]);
+                                }                                
                             }
                         })
 
@@ -122,8 +131,9 @@
                         maxDate = new Date(scope.dateOptions.maxDate).valueOf();
                     }
                     if (minDate || maxDate) {
-                        if (attrs.format !== 'dd/MM/yyyy') {
-                            throw new Error('Unsupported date format in validdate: ' + attrs.format)
+                        let dateFormat = attrs.format || attrs.dateFormat;
+                        if (dateFormat !== 'dd/MM/yyyy') {
+                            throw new Error('Unsupported date format in validdate: ' + dateFormat)
                         }
                     }
 
