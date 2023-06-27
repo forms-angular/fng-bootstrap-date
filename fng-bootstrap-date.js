@@ -12,8 +12,8 @@
             $scope.popup.opened = true;
         }
     }])
-        .directive('fngUiBootstrapDatePicker', ['$compile', '$timeout', 'pluginHelper', 'formMarkupHelper', 'recordHandler', 'cssFrameworkService',
-            function ($compile, $timeout, pluginHelper, formMarkupHelper, recordHandler) {
+        .directive('fngUiBootstrapDatePicker', ['$compile', '$timeout', 'PluginHelperService', 'FormMarkupHelperService', 'RecordHandlerService',
+            function ($compile, $timeout, PluginHelperService, FormMarkupHelperService, RecordHandlerService) {
                 return {
                     restrict: 'E',
                     replace: true,
@@ -32,7 +32,7 @@
                         }
 
                         var template;
-                        var processedAttrs = pluginHelper.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
+                        var processedAttrs = PluginHelperService.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
                         var overriddenDefaults = {
                             'show-button-bar': false,
                             'show-meridian': false,
@@ -57,7 +57,7 @@
                                 // one possible use case would be to use the value of a hidden "when created" field as a minimum
                                 // or maximum value for another (not hidden) date field
                                 if (scope.dateOptions[v].startsWith("record.") || scope.dateOptions[v].startsWith("subDoc.")) {
-                                    scope.dateOptions[v] = recordHandler.getData(scope, scope.dateOptions[v]);
+                                    scope.dateOptions[v] = RecordHandlerService.getData(scope, scope.dateOptions[v]);
                                 } else {
                                     scope.dateOptions[v] = new Date(scope.dateOptions[v]);
                                 }                                
@@ -65,7 +65,7 @@
                         })
 
                         const isArray = processedAttrs.info.array;
-                        template = pluginHelper.buildInputMarkup(
+                        template = PluginHelperService.buildInputMarkup(
                             scope,
                             attrs,
                             {
@@ -89,8 +89,8 @@
                                 if (processedAttrs.info.required) {
                                     str += " required";
                                 }
-                                const markup = formMarkupHelper.addTextInputMarkup(buildingBlocks, processedAttrs.info, '');
-                                const disabled = pluginHelper.genDisabledStr(scope, processedAttrs, "");
+                                const markup = FormMarkupHelperService.addTextInputMarkup(buildingBlocks, processedAttrs.info, '');
+                                const disabled = PluginHelperService.genDisabledStr(scope, processedAttrs, "");
                                 const dateFormat = processedAttrs.directiveOptions.format || processedAttrs.directiveOptions['date-format'] || 'dd/MM/yy';
                                 str += ` ${markup}${disabled}datepicker-options="dateOptions" uib-datepicker-popup="${dateFormat}"`;
     
@@ -101,7 +101,7 @@
                                     }
                                     str += ' is-open="popup.opened" ng-click="open()" validdate '; // don't remove the trailing space here
                                 }
-                                return formMarkupHelper.generateSimpleInput(
+                                return FormMarkupHelperService.generateSimpleInput(
                                     str,
                                     processedAttrs.info,
                                     processedAttrs.options
