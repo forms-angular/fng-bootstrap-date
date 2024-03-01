@@ -32,7 +32,7 @@
                         }
 
                         var template;
-                        var processedAttrs = PluginHelperService.extractFromAttr(attrs, 'fngUiBootstrapDatePicker');
+                        var processedAttrs = PluginHelperService.extractFromAttr(attrs, 'fngUiBootstrapDatePicker', scope);
                         var overriddenDefaults = {
                             'show-button-bar': false,
                             'show-meridian': false,
