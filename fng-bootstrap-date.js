@@ -99,7 +99,7 @@
                                     scope.open = function () {
                                         scope.popup.opened = true;
                                     }
-                                    str += ' is-open="popup.opened" ng-click="open()" validdate '; // don't remove the trailing space here
+                                    str += ' is-open="popup.opened" ng-click="open()" ng-change="setDirty()" validdate '; // don't remove the trailing space here
                                 }
                                 return FormMarkupHelperService.generateSimpleInput(
                                     str,
